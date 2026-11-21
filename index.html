@@ -1,0 +1,718 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ตู้คีบเป็ดน้อย 🦆💖</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&family=Mali:wght@500;600;700&family=Patrick+Hand&display=swap" rel="stylesheet">
+
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; }
+    body {
+      font-family: 'Kanit', sans-serif;
+      background: #4b7480;
+      background-image: radial-gradient(rgba(255,255,255,.07) 2px, transparent 2px);
+      background-size: 26px 26px;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      user-select: none; -webkit-user-select: none;
+      overflow-x: hidden;
+    }
+
+    /* ===== แถบด้านบน ===== */
+    #topbar {
+      width: 100%; max-width: 720px; display: flex; gap: 8px; align-items: center;
+      justify-content: space-between; padding: 8px 10px;
+    }
+    .pill {
+      background: #fff; border: 3px solid #1f2a30; border-radius: 999px;
+      padding: 5px 12px; font-size: 12px; font-weight: 500; color: #2a3a40;
+    }
+    #status-text { flex: 1; min-width: 0; line-height: 1.25; }
+    button.pill { cursor: pointer; font-family: inherit; font-weight: 600; background: #f6cd48; white-space: nowrap; }
+    button.pill b { background: #e8728f; color: #fff; border-radius: 999px; padding: 0 7px; margin-left: 4px; font-size: 11px; }
+
+    /* ===== เวที 720x1280 (ย่อ/ขยายอัตโนมัติ) ===== */
+    #stage-wrap { position: relative; margin: 0 auto 10px; }
+    #stage {
+      position: absolute; left: 0; top: 0; width: 720px; height: 1280px;
+      transform-origin: 0 0; overflow: hidden; border-radius: 28px; background: #5d8895;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+    }
+    #stage svg.layer { position: absolute; left: 0; top: 0; pointer-events: none; }
+    #art { z-index: 1; }
+    #overlay { z-index: 20; }
+
+    /* ===== หน้าต่างตู้คีบ ===== */
+    #win {
+      position: absolute; left: 124px; top: 445px; width: 460px; height: 500px;
+      border-radius: 30px; overflow: hidden; z-index: 10;
+      background-color: #a8d4c7;
+      background-image:
+        linear-gradient(90deg, rgba(116,176,160,.42) 50%, transparent 50%),
+        linear-gradient(rgba(116,176,160,.42) 50%, transparent 50%);
+      background-size: 92px 92px;
+      box-shadow: inset 0 0 0 2px #3b4a50;
+    }
+    #win .rail {
+      position: absolute; left: 0; right: 0; top: 36px; height: 12px; background: #fff;
+      border-top: 2.5px solid #2a2a2a; border-bottom: 2.5px solid #2a2a2a; z-index: 2;
+    }
+    #win .heart { position: absolute; color: #f58aa6; font-size: 22px; z-index: 3; }
+    #pile { position: absolute; inset: 0; z-index: 3; }
+
+    .pduck { position: absolute; transition: transform .45s cubic-bezier(.3,1.4,.5,1), opacity .35s; }
+    .pduck.gone { opacity: 0; transform: scale(.5) translateY(-30px); }
+    .pduck .bob { animation: bob 3s ease-in-out infinite; }
+    .pduck svg { display: block; filter: drop-shadow(0 0 1.5px #fff) drop-shadow(0 2px 0 rgba(0,0,0,.08)); }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+    #pile.wiggle .bob { animation: wig .5s ease-in-out 2; }
+    @keyframes wig { 0%,100% { transform: rotate(0); } 25% { transform: rotate(-8deg); } 75% { transform: rotate(8deg); } }
+
+    /* ===== ขาคีบ ===== */
+    #claw-rig {
+      position: absolute; top: 29px; left: 92px; width: 90px; margin-left: -45px;
+      display: flex; flex-direction: column; align-items: center; z-index: 5;
+      transition: left .04s linear;
+    }
+    .connector {
+      width: 48px; height: 26px; border-radius: 9px; background: #8eaad6;
+      border: 3px solid #2a3a50; position: relative;
+    }
+    .connector::after { content: ''; position: absolute; left: 12px; right: 12px; top: 5px; height: 5px; border-radius: 4px; background: rgba(255,255,255,.55); }
+    #claw-cable {
+      width: 8px; height: 40px; background: #fff;
+      border-left: 2.5px solid #2a2a2a; border-right: 2.5px solid #2a2a2a;
+      transition: height .55s ease-in-out;
+    }
+    #claw-head { position: relative; width: 90px; height: 80px; }
+    #grabbed { position: absolute; left: 50%; top: 44px; transform: translateX(-50%); width: 84px; z-index: 1; display: none; }
+    #claw-svg { position: relative; z-index: 2; overflow: visible; }
+
+    /* ===== ของรางวัลที่ตกลงช่องรับ ===== */
+    #prize { position: absolute; display: none; width: 90px; z-index: 30; pointer-events: none; }
+
+    /* ===== ปุ่ม Grab ===== */
+    #btn-drop {
+      position: absolute; left: 343px; top: 983px; width: 120px; height: 58px; z-index: 12;
+      border: 4px solid #1f2a30; border-radius: 30px; background: #f6cd48;
+      font: 700 30px 'Mali', cursive; letter-spacing: 2px; color: #3a2e2a; cursor: pointer;
+      box-shadow: inset 0 0 0 3px #fbe48a, 0 5px 0 #1f2a30; transition: all .1s;
+    }
+    #btn-drop:active { transform: translateY(4px); box-shadow: inset 0 0 0 3px #fbe48a, 0 1px 0 #1f2a30; }
+
+    /* ===== ปุ่มเสียง ===== */
+    #btn-sound {
+      position: absolute; left: 343px; top: 1075px; width: 62px; height: 62px; z-index: 12;
+      border-radius: 50%; background: #4b78b5; border: 4px solid #1f2a30; color: #fff;
+      font-size: 30px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+      box-shadow: inset 0 0 0 4px #7aa2d6;
+    }
+    #btn-sound.off { opacity: .55; }
+
+    /* ===== จอยสติ๊กหัวใจ ===== */
+    #joy { position: absolute; left: 488px; top: 890px; width: 124px; height: 160px; z-index: 12; touch-action: none; cursor: grab; }
+    .joy-base { position: absolute; left: 6px; bottom: 0; width: 112px; height: 64px; border-radius: 50%; background: #a7d6c6; border: 4px solid #1f2a30; }
+    .joy-base::after { content: ''; position: absolute; inset: 8px; border: 3px dashed #fff; border-radius: 50%; }
+    #joy-stick { position: absolute; left: 50%; bottom: 32px; width: 0; height: 64px; transform-origin: 50% 100%; transition: transform .08s; }
+    .stick { position: absolute; left: -12px; top: 0; width: 24px; height: 70px; background: #f6cd48; border: 4px solid #1f2a30; border-radius: 12px; }
+    .knob { position: absolute; left: -38px; top: -52px; width: 76px; height: 76px; border-radius: 50%; background: #fff; border: 4px solid #1f2a30; display: flex; align-items: center; justify-content: center; }
+
+    /* ===== แท็บด้านขวา ===== */
+    .tab {
+      position: absolute; left: 632px; width: 120px; height: 44px; z-index: 12; cursor: pointer;
+      border: 4px solid #1f2a30; border-right: none; border-radius: 24px 0 0 24px; background: #d9666c; color: #fff;
+      font: 700 22px 'Mali', cursive; text-align: left; padding: 0 0 0 54px;
+    }
+    .tab .ic { position: absolute; left: 8px; top: -2px; font-size: 28px; }
+    .tab b { position: absolute; left: -2px; top: -14px; background: #f6cd48; color: #3a2e2a; border: 3px solid #1f2a30; border-radius: 999px; min-width: 28px; height: 28px; font: 700 15px 'Kanit'; display: flex; align-items: center; justify-content: center; }
+
+    /* ===== โมดัล ===== */
+    .modal { position: fixed; inset: 0; background: rgba(30,50,58,.55); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 100; }
+    .modal.show { display: flex; }
+    .card {
+      background: #fffdf5; border: 4px solid #26353b; border-radius: 28px; padding: 22px;
+      max-width: 360px; width: 100%; text-align: center; animation: pop .4s cubic-bezier(.2,.9,.3,1.2);
+      box-shadow: 0 12px 0 rgba(0,0,0,.15);
+    }
+    @keyframes pop { 0% { transform: scale(.6) rotate(-4deg); opacity: 0; } 100% { transform: scale(1) rotate(0); opacity: 1; } }
+    .badge { display: inline-block; background: #f6cd48; border: 3px solid #26353b; color: #3a2e2a; font-weight: 700; font-size: 12px; padding: 3px 14px; border-radius: 999px; margin-bottom: 10px; }
+    .ticket {
+      background: #fff; border: 3px dashed #7fb3a6; border-radius: 20px; padding: 22px 16px; margin: 6px 0;
+    }
+    .ticket .em { font-size: 60px; margin-bottom: 8px; }
+    .ticket .lbl { font-size: 10px; letter-spacing: .25em; color: #5d8895; font-weight: 700; }
+    .ticket h3 { font: 700 20px 'Mali', cursive; color: #35464c; margin: 4px 0 8px; }
+    .ticket p { font-size: 12px; color: #6b7b80; line-height: 1.6; margin: 0 0 12px; }
+    .ticket .ft { border-top: 2px dashed #b9d9d1; padding-top: 8px; display: flex; justify-content: space-between; font-size: 10px; color: #8a9a9e; }
+    .btn-main {
+      margin-top: 14px; width: 100%; padding: 12px; border-radius: 999px; border: 4px solid #26353b;
+      background: #f6cd48; color: #3a2e2a; font: 700 16px 'Kanit'; cursor: pointer; box-shadow: 0 4px 0 #26353b;
+    }
+    .btn-main:active { transform: translateY(3px); box-shadow: 0 1px 0 #26353b; }
+    #inv-card { max-height: 82vh; display: flex; flex-direction: column; text-align: left; }
+    .inv-head { display: flex; justify-content: space-between; align-items: center; padding-bottom: 10px; border-bottom: 2px dashed #b9d9d1; }
+    .inv-head h3 { margin: 0; font: 700 18px 'Mali', cursive; color: #35464c; }
+    .inv-head p { margin: 0; font-size: 11px; color: #8a9a9e; }
+    .x { width: 34px; height: 34px; border-radius: 50%; border: 3px solid #26353b; background: #fff; font-weight: 700; cursor: pointer; }
+    #inventory-list { overflow-y: auto; padding: 14px 0 4px; display: flex; flex-direction: column; gap: 10px; }
+    .item { display: flex; gap: 12px; align-items: center; border: 3px solid #26353b; border-radius: 18px; background: #f2fbf8; padding: 10px; }
+    .item .ico { width: 48px; height: 48px; border-radius: 14px; border: 3px solid #26353b; display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; }
+    .item h4 { margin: 0; font-size: 14px; color: #35464c; }
+    .item p { margin: 2px 0 0; font-size: 11px; color: #6b7b80; }
+    .item .no { font-size: 10px; background: #e8728f; color: #fff; padding: 1px 7px; border-radius: 999px; margin-right: 6px; font-weight: 700; }
+
+    /* ===== คอนเฟตติ ===== */
+    .confetti { position: fixed; z-index: 120; pointer-events: none; font-size: 24px; animation: burst 1.4s ease-out forwards; }
+    @keyframes burst { 0% { transform: translate(0,0) scale(.4); opacity: 1; } 100% { transform: translate(var(--dx), var(--dy)) scale(1.1) rotate(var(--r)); opacity: 0; } }
+  </style>
+</head>
+<body>
+
+  <div id="topbar">
+    <div class="pill" id="status-text">กดค้างที่จอยสติ๊กซ้าย/ขวาเพื่อเลื่อนขาคีบ แล้วกด Grab!</div>
+    <button class="pill" onclick="openInventoryModal()">🎟️ คูปองของฉัน <b id="won-badge">0</b></button>
+  </div>
+
+  <div id="stage-wrap">
+    <div id="stage">
+
+      <!-- ===== ชั้นภาพวาดด้านล่าง ===== -->
+      <svg id="art" class="layer" viewBox="0 0 720 1280" width="720" height="1280">
+        <defs>
+          <path id="heart" d="M0 8 C-18 -4 -14 -18 -6 -18 C-2 -18 0 -14 0 -11 C0 -14 2 -18 6 -18 C14 -18 18 -4 0 8Z"/>
+          <polygon id="star" points="0,-16 4.7,-5.5 15.2,-4.9 7.2,2.1 9.4,12.9 0,7 -9.4,12.9 -7.2,2.1 -15.2,-4.9 -4.7,-5.5"/>
+          <clipPath id="bodyClip"><path d="M100 1255 C55 1255 28 1230 28 1185 L28 330 C28 160 170 38 345 38 C520 38 668 160 668 330 L668 1185 C668 1230 640 1255 595 1255 Z"/></clipPath>
+          <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity=".22"/></filter>
+        </defs>
+
+        <!-- พื้นหลัง -->
+        <rect width="720" height="1280" fill="#5d8895"/>
+        <circle cx="420" cy="18" r="26" fill="rgba(255,255,255,.09)"/>
+        <circle cx="18" cy="312" r="24" fill="rgba(255,255,255,.09)"/>
+        <circle cx="690" cy="75" r="34" fill="rgba(255,255,255,.08)"/>
+        <circle cx="40" cy="515" r="22" fill="rgba(255,255,255,.08)"/>
+        <circle cx="70" cy="1235" r="58" fill="rgba(255,255,255,.07)"/>
+        <circle cx="690" cy="880" r="30" fill="rgba(255,255,255,.07)"/>
+        <use href="#heart" transform="translate(705 70) scale(1.4)" fill="rgba(255,255,255,.1)"/>
+
+        <!-- ตัวตู้ = เป็ดตัวใหญ่ -->
+        <path filter="url(#shadow)" d="M100 1255 C55 1255 28 1230 28 1185 L28 330 C28 160 170 38 345 38 C520 38 668 160 668 330 L668 1185 C668 1230 640 1255 595 1255 Z" fill="#fff" stroke="#1f2a30" stroke-width="6" stroke-linejoin="round"/>
+        <path d="M338 14 q8 12 8 26 M356 10 q8 12 8 26" stroke="#1f2a30" stroke-width="5" fill="none" stroke-linecap="round"/>
+
+        <!-- หน้าเป็ด -->
+        <ellipse cx="135" cy="277" rx="46" ry="40" fill="#f58f8f"/>
+        <ellipse cx="124" cy="268" rx="12" ry="6" fill="#fff" transform="rotate(22 124 268)"/>
+        <ellipse cx="146" cy="280" rx="8" ry="5" fill="#fff" transform="rotate(22 146 280)"/>
+        <ellipse cx="428" cy="305" rx="56" ry="48" fill="#f58f8f"/>
+        <ellipse cx="416" cy="292" rx="13" ry="7" fill="#fff" transform="rotate(22 416 292)"/>
+        <ellipse cx="440" cy="306" rx="9" ry="5" fill="#fff" transform="rotate(22 440 306)"/>
+        <ellipse cx="198" cy="212" rx="19" ry="24" fill="#1f1f1f"/>
+        <ellipse cx="206" cy="201" rx="7" ry="8" fill="#fff"/><circle cx="192" cy="226" r="4" fill="#fff"/>
+        <ellipse cx="381" cy="243" rx="19" ry="24" fill="#1f1f1f"/>
+        <ellipse cx="389" cy="232" rx="7" ry="8" fill="#fff"/><circle cx="375" cy="257" r="4" fill="#fff"/>
+        <path d="M178 232 C162 242 162 260 178 270" stroke="#1f2a30" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M349 268 C338 286 342 304 358 313" stroke="#1f2a30" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <path d="M196 250 C232 222 322 224 356 262 C342 298 256 312 218 286 C204 276 196 264 196 250Z" fill="#f6a243" stroke="#1f2a30" stroke-width="3.5" stroke-linejoin="round"/>
+
+        <!-- เชือกแขวนเป็ดน้อย (มุมขวาบน) -->
+        <line x1="585" y1="0" x2="585" y2="172" stroke="#1f2a30" stroke-width="3"/>
+        <circle cx="587" cy="190" r="21" fill="#f8d252" stroke="#1f2a30" stroke-width="3"/>
+        <path d="M575 196 C580 190 596 190 600 196 C598 204 578 204 575 196Z" fill="#f6a243" stroke="#1f2a30" stroke-width="2"/>
+        <circle cx="580" cy="184" r="2.6" fill="#1f2a30"/><circle cx="596" cy="184" r="2.6" fill="#1f2a30"/>
+
+        <!-- แคปซูลสี 4 เม็ด -->
+        <rect x="526" y="284" width="112" height="62" rx="28" fill="#fff" stroke="#1f2a30" stroke-width="2.5" stroke-dasharray="6 4"/>
+        <circle cx="552" cy="297" r="6" fill="#f8d252" stroke="#1f2a30" stroke-width="1.8"/>
+        <circle cx="570" cy="297" r="6" fill="#f8d252" stroke="#1f2a30" stroke-width="1.8"/>
+        <circle cx="588" cy="297" r="6" fill="#f8d252" stroke="#1f2a30" stroke-width="1.8"/>
+        <rect x="540" y="306" width="17" height="34" rx="8.5" fill="#e8736b" stroke="#1f2a30" stroke-width="2.5"/>
+        <rect x="561" y="306" width="17" height="34" rx="8.5" fill="#f6d04d" stroke="#1f2a30" stroke-width="2.5"/>
+        <rect x="582" y="306" width="17" height="34" rx="8.5" fill="#4f86c6" stroke="#1f2a30" stroke-width="2.5"/>
+        <rect x="603" y="306" width="17" height="34" rx="8.5" fill="#8cc4e8" stroke="#1f2a30" stroke-width="2.5"/>
+
+        <!-- ดาว -->
+        <use href="#star" transform="translate(628 42)" fill="#f9d357" stroke="#f9d357" stroke-width="4" stroke-linejoin="round"/>
+        <use href="#star" transform="translate(58 146) scale(.85)" fill="#f9d357" stroke="#f9d357" stroke-width="4" stroke-linejoin="round"/>
+        <use href="#star" transform="translate(645 718) scale(.95)" fill="#f9d357" stroke="#f9d357" stroke-width="4" stroke-linejoin="round"/>
+        <use href="#star" transform="translate(68 1000) scale(.85)" fill="#f9d357" stroke="#f9d357" stroke-width="4" stroke-linejoin="round"/>
+
+        <!-- กรอบหน้าต่างตู้ -->
+        <rect x="110" y="430" width="488" height="528" rx="42" fill="#fff" stroke="#1f2a30" stroke-width="6"/>
+
+        <!-- ช่องรับของ: ผ้าใบกันสาด + กล่อง -->
+        <rect x="124" y="1050" width="190" height="150" rx="16" fill="#a6d3c6" stroke="#1f2a30" stroke-width="5"/>
+        <ellipse cx="219" cy="1180" rx="78" ry="8" fill="rgba(255,255,255,.5)"/>
+        <g id="chute-duck"></g>
+        <g stroke="#1f2a30" stroke-width="4">
+          <rect x="112" y="985" width="42" height="80" rx="20" fill="#f7d27a"/>
+          <rect x="155" y="985" width="42" height="80" rx="20" fill="#7fa9cf"/>
+          <rect x="198" y="985" width="42" height="80" rx="20" fill="#f7d27a"/>
+          <rect x="241" y="985" width="42" height="80" rx="20" fill="#7fa9cf"/>
+          <rect x="284" y="985" width="42" height="80" rx="20" fill="#f7d27a"/>
+        </g>
+        <g fill="#fff" opacity=".75">
+          <rect x="120" y="995" width="7" height="26" rx="3.5"/><rect x="163" y="995" width="7" height="26" rx="3.5"/>
+          <rect x="206" y="995" width="7" height="26" rx="3.5"/><rect x="249" y="995" width="7" height="26" rx="3.5"/>
+          <rect x="292" y="995" width="7" height="26" rx="3.5"/>
+        </g>
+
+        <!-- ตัวหนังสือและของตกแต่งด้านล่าง -->
+        <text x="456" y="1100" font-family="'Patrick Hand','Mali',cursive" font-size="46" fill="#1f2a30" transform="rotate(-4 456 1100)">love you</text>
+        <text x="118" y="1244" font-family="monospace" font-size="22" letter-spacing="3" text>
+        <use href="#heart" transform="translate(362 1170) scale(.7)" fill="#f58aa6"
+        <use href="#heart" transform="translate(408 1126) scale(.6)" fill="#f58aa6"/>
+        <use href="#heart" transform="translate(474 1124) scale(.55)" fill="#f9a8bf"/>
+        <use href="#heart" transform="translate(340 1252) scale(.6)" fill="#f58aa6"/>
+        <use href="#heart" transform="translate(262 628) scale(.55)" fill="#f58aa6"/>
+        <use href="#heart" transform="translate(448 634) scale(.5)" fill="#f58aa6"/>
+
+        <!-- เป็ดน้อยมุมขวาล่าง -->
+        <g clip-path="url(#bodyClip)"><g id="corner-duck" transform="translate(450 1112) scale(1.5)"></g></g>
+      </svg>
+
+      <!-- ===== หน้าต่างตู้ (เล่นได้) ===== -->
+      <div id="win">
+        <div class="rail"></div>
+        <span class="heart" style="left:136px;top:178px">♥</span>
+        <span class="heart" style="left:324px;top:186px;font-size:16px">♥</span>
+        <span class="heart" style="left:344px;top:170px;font-size:14px">♥</span>
+        <div id="pile"></div>
+
+        <div id="claw-rig">
+          <div class="connector"></div>
+          <div id="claw-cable"></div>
+          <div id="claw-head">
+            <div id="grabbed"></div>
+            <svg id="claw-svg" viewBox="0 0 90 80" width="90" height="80">
+              <g id="arm-l" style="transform-origin:33px 26px;transition:transform .3s">
+                <path d="M33 26 C16 36 12 52 22 70" fill="none" stroke="#2a2a2a" stroke-width="9" stroke-linecap="round"/>
+                <path d="M33 26 C16 36 12 52 22 70" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/>
+              </g>
+              <g id="arm-r" style="transform-origin:57px 26px;transition:transform .3s">
+                <path d="M57 26 C74 36 78 52 68 70" fill="none" stroke="#2a2a2a" stroke-width="9" stroke-linecap="round"/>
+                <path d="M57 26 C74 36 78 52 68 70" fill="none" stroke="#fff" stroke-width="4.5" stroke-linecap="round"/>
+              </g>
+              <rect x="20" y="2" width="50" height="34" rx="16" fill="#f6cd48" stroke="#2a2a2a" stroke-width="3.5"/>
+              <path d="M45 28 C34 21 36 11 41 11 C43.5 11 45 13 45 15 C45 13 46.5 11 49 11 C54 11 56 21 45 28Z" fill="#f2728f"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ของรางวัลที่ตกลงช่อง -->
+      <div id="prize"></div>
+
+      <!-- ===== ปุ่มควบคุม ===== -->
+      <button id="btn-drop" onclick="dropClaw()">Grab</button>
+      <button id="btn-sound" onclick="toggleSound()" aria-label="เสียง">♫</button>
+      <div id="joy">
+        <div class="joy-base"></div>
+        <div id="joy-stick">
+          <div class="stick"></div>
+          <div class="knob">
+            <svg viewBox="-20 -20 40 40" width="42" height="42"><path d="M0 10 C-18 -2 -14 -16 -6 -16 C-2 -16 0 -12 0 -10 C0 -12 2 -16 6 -16 C14 -16 18 -2 0 10Z" fill="#e8728f" stroke="#1f2a30" stroke-width="2"/><ellipse cx="-7" cy="-9" rx="3" ry="2" fill="#fff" opacity=".8"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== แท็บด้านขวา ===== -->
+      <button class="tab" style="top:1035px" onclick="openInventoryModal()"><span class="ic">🐥</span>stars<b id="won-badge-tab">0</b></button>
+      <button class="tab" style="top:1100px" onclick="shakeDucks()"><span class="ic">🐥</span>duck</button>
+      <button class="tab" style="top:1165px" onclick="toggleSound()"><span class="ic">🐥</span><span id="sound-label">sound</span></button>
+
+      <!-- ===== ชั้นภาพวาดด้านบน (ปีกเป็ด) ===== -->
+      <svg id="overlay" class="layer" viewBox="0 0 720 1280" width="720" height="1280">
+        <path d="M62 560 C88 536 140 538 160 560 C150 592 100 600 60 596 C52 586 54 570 62 560Z" fill="#fff" stroke="#7f98b0" stroke-width="3.5" stroke-linejoin="round"/>
+        <path d="M658 560 C632 536 580 538 560 560 C570 592 620 600 660 596 C668 586 666 570 658 560Z" fill="#fff" stroke="#7f98b0" stroke-width="3.5" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ==================== โมดัลคูปองที่คีบได้ ==================== -->
+  <div id="reward-modal" class="modal">
+    <div class="card">
+      <div class="badge">🎉 ยินดีด้วย! คีบได้แล้ว</div>
+      <div class="ticket">
+        <div id="reward-emoji" class="em">🍜</div>
+        <div class="lbl">LOVE COUPON</div>
+        <h3 id="reward-title">คูปอง</h3>
+        <p id="reward-desc">รายละเอียด</p>
+        <div class="ft"><span id="reward-from">FROM: แฟนสุดหล่อ</span><span>NO EXPIRATION ♥</span></div>
+      </div>
+      <button class="btn-main" onclick="closeRewardModal()">เก็บเข้ากระเป๋า & คีบต่อ 🐥💖</button>
+    </div>
+  </div>
+
+  <!-- ==================== โมดัลกระเป๋าคูปอง ==================== -->
+  <div id="inventory-modal" class="modal" onclick="closeInventoryModal()">
+    <div id="inv-card" class="card" onclick="event.stopPropagation()">
+      <div class="inv-head">
+        <div>
+          <h3>🎟️ คูปองที่คีบได้ทั้งหมด</h3>
+          <p>แคปหน้าจอส่งมาแลกสิทธิ์กับแฟนได้เลย!</p>
+        </div>
+        <button class="x" onclick="closeInventoryModal()">✕</button>
+      </div>
+      <div id="inventory-list"></div>
+      <button class="btn-main" style="margin-top:10px;background:#fff" onclick="resetGame()">🔄 เริ่มเล่นใหม่ (เป็ดกลับมาครบ)</button>
+    </div>
+  </div>
+
+  <script>
+    /**
+     * =========================================================================
+     * ปรับแต่งข้อความ ชื่อ และรายการคูปองของขวัญได้ตรงนี้เลย!
+     * =========================================================================
+     */
+    const CONFIG = {
+      senderName: "แฟนของคุณ",
+      coupons: [
+        { emoji: "🍲", title: "คูปองกินชาบู / หมูกระทะฟรี!", desc: "เลือกได้เลยว่าจะกินร้านไหน มื้อนี้แฟนเป็นเจ้ามือเอง", color: "#ffc2d1" },
+        { emoji: "🛍️", title: "คูปองช้อปปิ้งตามใจ 1 อย่าง", desc: "อยากได้เสื้อผ้า กระเป๋า หรือเครื่องสำอาง ชี้ได้เลย!", color: "#ffe08a" },
+        { emoji: "💆‍♀️", title: "คูปองนวดไหล่ & นวดเท้า 30 นาที", desc: "บริการนวดผ่อนคลายสุดพิเศษ โดยพนักงานส่วนตัว", color: "#e0c8ff" },
+        { emoji: "🧋", title: "คูปองชานมไข่มุก / กาแฟ 3 แก้ว", desc: "สั่งได้ทุกเวลา พร้อมบริการเดลิเวอรี่ส่งถึงที่", color: "#b8e4ff" },
+        { emoji: "🎬", title: "คูปองดูหนังเรื่องโปรด + ป๊อปคอร์น", desc: "ให้สิทธิ์เลือกหนังที่อยากดูได้เต็มที่ ห้ามบ่น!", color: "#b9f0d4" },
+        { emoji: "🎟️", title: "คูปองตามใจ 1 วันเต็ม (VIP Pass)", desc: "วันนี้เธอคือบอส! สั่งอะไรก็ได้ตามใจ 1 วันเต็มๆ", color: "#ffb7cf" },
+        { emoji: "🫂", title: "คูปองกอดแน่นๆ & หอมแก้ม 10 ที", desc: "ใช้ได้ทันทีที่เจอกัน ชาร์จพลังใจแบบ 100%", color: "#ffd2a8" }
+      ]
+    };
+
+    const DEFAULT_STATUS = "กดค้างที่จอยสติ๊กซ้าย/ขวาเพื่อเลื่อนขาคีบ แล้วกด Grab!";
+
+    /* ---------- วาดเป็ดแต่ละแบบ (พื้นที่ 120x124) ---------- */
+    function duckInner(kind) {
+      const D = '#2a2a2a';
+      const SW = `stroke="${D}" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"`;
+      const body = kind === 'duckling' ? '#ffe36e' : '#fff';
+      let s = `<path d="M40 108 q-2 9 -9 10 q5 3 11 0 q3 -3 3 -10z M80 108 q2 9 9 10 q-5 3 -11 0 q-3 -3 -3 -10z" fill="#f5a342" stroke="${D}" stroke-width="1.8" stroke-linejoin="round"/>`;
+      s += `<path d="M16 72 C10 36 34 12 62 12 C90 12 114 36 108 72 C106 96 86 109 60 109 C34 109 18 96 16 72Z" fill="${body}" ${SW}/>`;
+      s += `<path d="M17 78 q-9 5 -5 15 q10 3 15 -7z" fill="${body}" ${SW}/><path d="M103 78 q9 5 5 15 q-10 3 -15 -7z" fill="${body}" ${SW}/>`;
+
+      if (kind === 'back') {
+        s += `<path d="M50 44 l9 9 M59 44 l-9 9" fill="none" ${SW}/>`;
+        s += `<path d="M56 13 q4 -9 11 -5" fill="none" ${SW}/>`;
+        return s;
+      }
+
+      let eyes = `<ellipse cx="42" cy="56" rx="3.6" ry="4.4" fill="${D}"/><ellipse cx="80" cy="56" rx="3.6" ry="4.4" fill="${D}"/>`;
+      if (kind === 'nightcap') eyes = `<path d="M35 58 q6 -7 12 0 M73 58 q6 -7 12 0" fill="none" ${SW}/>`;
+      if (kind === 'shades') eyes = '';
+      s += eyes;
+      s += `<ellipse cx="29" cy="66" rx="9" ry="6" fill="#ffb0a6"/><ellipse cx="93" cy="66" rx="9" ry="6" fill="#ffb0a6"/>`;
+      s += `<path d="M52 62 C56 56 68 56 72 62 C70 70 54 70 52 62Z" fill="#f7a24a" stroke="#c97420" stroke-width="1.4" stroke-linejoin="round"/>`;
+
+      switch (kind) {
+        case 'yellowhat':
+          s += `<path d="M16 44 C14 8 108 8 106 44 C88 30 34 30 16 44Z" fill="#f6cd48" ${SW}/>`;
+          s += `<path d="M18 42 C8 52 10 68 20 72 C16 60 20 50 26 42Z" fill="#f6cd48" ${SW}/><path d="M104 42 C114 52 112 68 102 72 C106 60 102 50 96 42Z" fill="#f6cd48" ${SW}/>`;
+          break;
+        case 'tuft':
+          s += `<path d="M56 14 C60 2 76 0 82 8 C72 6 66 10 64 18Z" fill="#222" stroke="#222" stroke-width="1.5" stroke-linejoin="round"/>`;
+          s += `<path d="M94 86 l22 -5 l-4 24 q-9 4 -15 0z" fill="#fff" ${SW}/><path d="M94 86 l22 -5" stroke="#f4a0b0" stroke-width="4" stroke-linecap="round"/>`;
+          break;
+        case 'halo':
+          s += `<ellipse cx="34" cy="12" rx="17" ry="5" fill="none" stroke="#f6cd48" stroke-width="3.5" transform="rotate(-12 34 12)"/>`;
+          s += `<path d="M104 94 l2 -7 l2 7 l7 2 l-7 2 l-2 7 l-2 -7 l-7 -2z" fill="#f6cd48" stroke="${D}" stroke-width="1.4" stroke-linejoin="round"/>`;
+          break;
+        case 'santa':
+          s += `<path d="M26 36 C26 6 72 -6 94 30 C72 24 48 24 26 36Z" fill="#d94343" ${SW}/>`;
+          s += `<path d="M20 42 C20 28 100 28 100 42 C100 50 20 50 20 42Z" fill="#fff" ${SW}/>`;
+          s += `<circle cx="94" cy="26" r="8" fill="#fff" ${SW}/>`;
+          s += `<rect x="48" y="88" width="26" height="26" rx="9" fill="#d94343" ${SW}/><rect x="58" y="112" width="6" height="8" fill="#e5b97a" ${SW}/>`;
+          break;
+        case 'frog':
+          s += `<path d="M14 50 C8 6 112 6 106 50 C98 38 22 38 14 50Z" fill="#8fdc86" ${SW}/>`;
+          s += `<circle cx="36" cy="20" r="13" fill="#9be392" ${SW}/><circle cx="84" cy="20" r="13" fill="#9be392" ${SW}/>`;
+          s += `<circle cx="36" cy="20" r="8" fill="#fff"/><circle cx="37" cy="21" r="4" fill="${D}"/><circle cx="84" cy="20" r="8" fill="#fff"/><circle cx="85" cy="21" r="4" fill="${D}"/>`;
+          s += `<path d="M44 102 l16 -7 l16 7 l-16 7z" fill="#8fdc86" ${SW}/><circle cx="108" cy="52" r="5" fill="#f59ab0" stroke="${D}" stroke-width="1.4"/>`;
+          break;
+        case 'shades':
+          s += `<path d="M18 88 C40 99 80 99 102 88 L106 106 C84 114 36 114 14 106Z" fill="#fff" ${SW}/>`;
+          s += `<path d="M30 95v14M44 98v14M58 99v14M72 99v14M86 98v14M98 96v12" stroke="#c4aee6" stroke-width="5" stroke-linecap="round"/>`;
+          s += `<rect x="28" y="47" width="27" height="17" rx="7" fill="#222"/><rect x="67" y="47" width="27" height="17" rx="7" fill="#222"/><path d="M55 54 h12" stroke="#222" stroke-width="3"/><path d="M33 51 h6" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".6"/>`;
+          break;
+        case 'bowl':
+          s += `<path d="M32 86 C32 106 90 106 90 86Z" fill="#f6cd48" ${SW}/><ellipse cx="61" cy="86" rx="29" ry="6.5" fill="#ffe27a" ${SW}/><path d="M72 84 L92 70" stroke="#c97420" stroke-width="3.5" stroke-linecap="round"/>`;
+          break;
+        case 'nightcap':
+          s += `<path d="M20 42 C24 10 66 4 100 28 C112 36 116 52 108 68 C100 46 60 38 20 42Z" fill="#9db9ec" ${SW}/><circle cx="110" cy="70" r="7" fill="#fff" ${SW}/>`;
+          s += `<text x="100" y="16" font-size="14" font-family="Mali,cursive" font-weight="700" fill="${D}">z</text>`;
+          break;
+      }
+      return s;
+    }
+    function duckSVG(kind, w) {
+      return `<svg viewBox="0 0 120 124" width="${w}" height="${Math.round(w * 124 / 120)}" style="overflow:visible">${duckInner(kind)}</svg>`;
+    }
+
+    /* ---------- กองเป็ดในตู้ (พิกัดอ้างอิงจากมุมซ้ายบนของหน้าต่าง) ---------- */
+    const PILE = [
+      { k: 'yellowhat', x: 200, y: 205 },
+      { k: 'tuft',      x: 305, y: 245 },
+      { k: 'halo',      x: 112, y: 318 },
+      { k: 'santa',     x: 215, y: 335 },
+      { k: 'frog',      x: 362, y: 328 },
+      { k: 'shades',    x: 52,  y: 392 },
+      { k: 'back',      x: 170, y: 432 },
+      { k: 'bowl',      x: 292, y: 420 },
+      { k: 'nightcap',  x: 412, y: 398 },
+      { k: 'duckling',  x: 440, y: 442, w: 88 }
+    ];
+
+    const $ = (id) => document.getElementById(id);
+    const rig = $('claw-rig'), cable = $('claw-cable'), armL = $('arm-l'), armR = $('arm-r');
+    const grabbed = $('grabbed'), prize = $('prize'), joy = $('joy'), joyStick = $('joy-stick');
+
+    let clawX = 216;           // ตำแหน่งขาคีบในพิกัดเวที (หน้าต่างเริ่มที่ x=124)
+    const CLAW_MIN = 150, CLAW_MAX = 560;
+    let joyDir = 0, joyTimer = null;
+    let isDropping = false, soundOn = true, wonCoupons = [], takenDuck = null, audioCtx = null;
+
+    function playTone(freq, type = 'sine', duration = 0.12) {
+      if (!soundOn) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+        osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(); osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function setStatus(t) { $('status-text').textContent = t; }
+
+    function couponsLeft() { return CONFIG.coupons.filter(c => !wonCoupons.some(w => w.title === c.title)); }
+    function ducksLeft() { return PILE.filter(p => !p.gone && !p.deco); }
+    function hasCouponsLeft() { return couponsLeft().length > 0 && ducksLeft().length > 0; }
+    function refreshStatus() {
+      const done = !hasCouponsLeft();
+      setStatus(done ? 'คีบคูปองครบทุกใบแล้ว 🎉 กดแท็บ stars เพื่อดูทั้งหมด' : DEFAULT_STATUS);
+      $('btn-drop').style.opacity = done ? 0.55 : 1;
+    }
+    function resetGame() {
+      wonCoupons = [];
+      PILE.forEach(p => { p.gone = false; p.el.classList.remove('gone'); });
+      updateInventoryUI(); refreshStatus(); closeInventoryModal();
+    }
+    function setClaw(x) { clawX = x; rig.style.left = (x - 124) + 'px'; }
+
+    /* ---------- ย่อ/ขยายเวทีให้พอดีหน้าจอ ---------- */
+    function fit() {
+      const top = $('topbar').offsetHeight;
+      const s = Math.max(0.28, Math.min((innerWidth - 16) / 720, (innerHeight - top - 20) / 1280));
+      $('stage-wrap').style.width = (720 * s) + 'px';
+      $('stage-wrap').style.height = (1280 * s) + 'px';
+      $('stage').style.transform = `scale(${s})`;
+    }
+    window.addEventListener('resize', fit);
+
+    /* ---------- เริ่มต้น ---------- */
+    window.addEventListener('DOMContentLoaded', () => {
+      $('reward-from').textContent = `FROM: ${CONFIG.senderName}`;
+
+      const pile = $('pile');
+      PILE.forEach((p) => {
+        const w = p.w || 120;
+        const el = document.createElement('div');
+        el.className = 'pduck';
+        el.style.left = (p.x - w / 2) + 'px';
+        el.style.top = (p.y - w / 2) + 'px';
+        el.style.zIndex = Math.round(p.y);
+        el.innerHTML = `<div class="bob" style="animation-delay:${(-Math.random() * 3).toFixed(2)}s">${duckSVG(p.k, w)}</div>`;
+        pile.appendChild(el);
+        p.el = el; p.gone = false;
+      });
+
+      // ถ้าคูปองน้อยกว่าจำนวนเป็ด ให้เป็ดส่วนเกินเป็นแค่ของตกแต่ง (คีบไม่ได้)
+      const DECO_ORDER = ['duckling', 'back', 'nightcap', 'bowl', 'tuft', 'frog', 'halo', 'santa', 'shades', 'yellowhat'];
+      const extra = Math.max(0, PILE.length - CONFIG.coupons.length);
+      DECO_ORDER.slice(0, extra).forEach(k => { const p = PILE.find(d => d.k === k); if (p) p.deco = true; });
+
+      $('chute-duck').setAttribute('transform', 'translate(159 1060)');
+      $('chute-duck').innerHTML = duckInner('back');
+      $('corner-duck').innerHTML = duckInner('tuft');
+
+      setClaw(clawX);
+      updateInventoryUI();
+      fit();
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(fit);
+    });
+
+    /* ---------- ควบคุมขาคีบ ---------- */
+    function moveClaw(dir) {
+      if (isDropping) return;
+      setClaw(Math.min(Math.max(CLAW_MIN, clawX + dir * 9), CLAW_MAX));
+      playTone(420 + clawX * 0.6, 'sine', 0.05);
+    }
+    function stopJoy() {
+      joyDir = 0;
+      if (joyTimer) { clearInterval(joyTimer); joyTimer = null; }
+      joyStick.style.transform = 'rotate(0deg)';
+    }
+    function updateJoy(e) {
+      const r = joy.getBoundingClientRect();
+      const n = (e.clientX - (r.left + r.width / 2)) / (r.width / 2);
+      joyDir = n > 0.18 ? 1 : (n < -0.18 ? -1 : 0);
+      joyStick.style.transform = `rotate(${Math.max(-1, Math.min(1, n)) * 24}deg)`;
+    }
+    joy.addEventListener('pointerdown', (e) => {
+      if (isDropping) return;
+      joy.setPointerCapture(e.pointerId);
+      updateJoy(e);
+      if (!joyTimer) joyTimer = setInterval(() => { if (joyDir) moveClaw(joyDir); }, 40);
+    });
+    joy.addEventListener('pointermove', (e) => { if (joyTimer) updateJoy(e); });
+    ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(ev => joy.addEventListener(ev, stopJoy));
+
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') moveClaw(-1);
+      if (e.key === 'ArrowRight') moveClaw(1);
+      if ((e.key === ' ' || e.key === 'Enter') && !isDropping && !document.querySelector('.modal.show')) {
+        e.preventDefault(); dropClaw();
+      }
+    });
+
+    /* ---------- จังหวะคีบ ---------- */
+    function dropClaw() {
+      if (isDropping) return;
+      if (!hasCouponsLeft()) { refreshStatus(); return; }
+      isDropping = true; stopJoy();
+      setStatus('กำลังหย่อนขาคีบ... 🤞');
+      armL.style.transform = 'rotate(24deg)';
+      armR.style.transform = 'rotate(-24deg)';
+      cable.style.height = '190px';
+      playTone(300, 'triangle', 0.25);
+
+      setTimeout(() => {
+        armL.style.transform = 'rotate(-6deg)';
+        armR.style.transform = 'rotate(6deg)';
+        playTone(520, 'sine', 0.15);
+
+        // เป็ดตัวที่อยู่ใกล้ขาคีบที่สุด
+        const rel = clawX - 124;
+        const avail = ducksLeft();
+        const target = avail.reduce((a, b) => Math.abs(b.x - rel) < Math.abs(a.x - rel) ? b : a);
+        target.gone = true; target.el.classList.add('gone'); takenDuck = target;
+        grabbed.innerHTML = duckSVG(target.k, 84); grabbed.style.display = 'block';
+
+        // สุ่มคูปอง (ยังไม่ได้ก่อน)
+        const remaining = couponsLeft();
+        const selected = remaining[Math.floor(Math.random() * remaining.length)];
+
+        setTimeout(() => {
+          setStatus('ได้แล้ว! กำลังพาไปส่งที่ช่องรับ... ✨');
+          cable.style.height = '40px';
+          playTone(620, 'sine', 0.2);
+
+          setTimeout(() => {
+            rig.style.transition = 'left .7s ease-in-out';
+            setClaw(162);
+
+            setTimeout(() => {
+              // ปล่อยเป็ดลงช่องรับของ
+              armL.style.transform = 'rotate(24deg)';
+              armR.style.transform = 'rotate(-24deg)';
+              grabbed.style.display = 'none';
+              prize.innerHTML = duckSVG(takenDuck.k, 90);
+              prize.style.display = 'block';
+              prize.style.transition = 'none';
+              prize.style.left = (clawX - 45) + 'px';
+              prize.style.top = '584px';
+              prize.getBoundingClientRect();
+              prize.style.transition = 'top .8s cubic-bezier(.55,0,1,.7), left .8s ease-out';
+              prize.style.left = '174px';
+              prize.style.top = '1085px';
+              playTone(880, 'triangle', 0.3);
+
+              setTimeout(() => {
+                wonCoupons.unshift(selected);
+                updateInventoryUI();
+                burstConfetti();
+                showRewardModal(selected);
+
+                armL.style.transform = 'rotate(0deg)';
+                armR.style.transform = 'rotate(0deg)';
+                rig.style.transition = 'left .8s ease-in-out';
+                setClaw(216);
+                setTimeout(() => {
+                  rig.style.transition = 'left .04s linear';
+                  isDropping = false;
+                  refreshStatus();
+                }, 850);
+              }, 950);
+            }, 750);
+          }, 650);
+        }, 350);
+      }, 650);
+    }
+
+    /* ---------- เอฟเฟกต์ & โมดัล ---------- */
+    function burstConfetti() {
+      const icons = ['💗', '⭐', '✨', '🎀', '💛', '🐥'];
+      const cx = innerWidth / 2, cy = innerHeight / 2;
+      for (let i = 0; i < 22; i++) {
+        const c = document.createElement('span');
+        c.className = 'confetti'; c.textContent = icons[i % icons.length];
+        const ang = Math.random() * Math.PI * 2, dist = 120 + Math.random() * 180;
+        c.style.left = cx + 'px'; c.style.top = cy + 'px';
+        c.style.setProperty('--dx', `${Math.cos(ang) * dist}px`);
+        c.style.setProperty('--dy', `${Math.sin(ang) * dist}px`);
+        c.style.setProperty('--r', `${(Math.random() - 0.5) * 120}deg`);
+        document.body.appendChild(c);
+        setTimeout(() => c.remove(), 1500);
+      }
+    }
+
+    function showRewardModal(c) {
+      $('reward-emoji').textContent = c.emoji;
+      $('reward-title').textContent = c.title;
+      $('reward-desc').textContent = c.desc;
+      $('reward-modal').classList.add('show');
+    }
+    function closeRewardModal() {
+      $('reward-modal').classList.remove('show');
+      prize.style.display = 'none';
+      takenDuck = null;   // เป็ดตัวที่คีบได้หายไปจากตู้ถาวร
+    }
+
+    function updateInventoryUI() {
+      $('won-badge').textContent = wonCoupons.length;
+      $('won-badge-tab').textContent = wonCoupons.length;
+      const list = $('inventory-list');
+      if (wonCoupons.length === 0) {
+        list.innerHTML = `<div style="text-align:center;padding:36px 0;color:#8a9a9e"><div style="font-size:40px">🐥</div><p style="font-size:14px;margin:6px 0 2px">ยังไม่มีคูปองในกระเป๋าเลย</p><p style="font-size:12px;margin:0">ลองไปกดคีบในตู้ดูก่อนนะ!</p></div>`;
+        return;
+      }
+      list.innerHTML = wonCoupons.map((c, i) => `
+        <div class="item">
+          <div class="ico" style="background:${c.color}">${c.emoji}</div>
+          <div style="min-width:0">
+            <h4><span class="no">#${wonCoupons.length - i}</span>${c.title}</h4>
+            <p>${c.desc}</p>
+          </div>
+        </div>`).join('');
+    }
+    function openInventoryModal() { $('inventory-modal').classList.add('show'); }
+    function closeInventoryModal() { $('inventory-modal').classList.remove('show'); }
+
+    /* ---------- แท็บ duck / sound ---------- */
+    function shakeDucks() {
+      const p = $('pile');
+      p.classList.remove('wiggle'); void p.offsetWidth; p.classList.add('wiggle');
+      playTone(660, 'triangle', 0.12); setTimeout(() => playTone(780, 'triangle', 0.12), 120);
+    }
+    function toggleSound() {
+      soundOn = !soundOn;
+      $('btn-sound').classList.toggle('off', !soundOn);
+      $('sound-label').textContent = soundOn ? 'sound' : 'mute';
+      if (soundOn) playTone(700, 'sine', 0.12);
+    }
+  </script>
+</body>
+</html>
